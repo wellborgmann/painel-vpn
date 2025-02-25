@@ -10,7 +10,7 @@ import { proxySSH } from './app/referencia.js';
 const app = express();
 const server = http.createServer(app);
 
-// Middleware para parser JSON e sessão
+// Middleware para parser JSON e sessão...
 app.use(express.json());
 
 const sessionMiddleware = session({
