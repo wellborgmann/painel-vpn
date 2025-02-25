@@ -1,9 +1,9 @@
 import express from 'express';
 import http from 'http';
 import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import bcrypt from 'bcrypt';
 import { getUser, novaConfig, getConfigs, updateConfig, deleteConfig } from './app/banco.js';
 import { proxySSH } from './app/referencia.js';
 
@@ -13,10 +13,23 @@ const server = http.createServer(app);
 // Middleware para parser JSON e sessão...
 app.use(express.json());
 
+// Configuração do armazenamento de sessão no MySQL
+const sessionStore = new MySQLStore({
+    host: 'localhost',      // Altere para o host do seu banco
+    user: 'root',          // Usuário do banco
+    password: 'sua_senha', // Senha do banco
+    database: 'seu_banco', // Nome do banco de dados
+    clearExpired: true,    // Limpa sessões expiradas automaticamente
+    checkExpirationInterval: 900000, // Verifica sessões expiradas a cada 15min
+    expiration: 86400000   // Expiração da sessão em 24 horas
+});
+
+// Configuração da sessão
 const sessionMiddleware = session({
     secret: 'seu_segredo_aqui',
     resave: false,
     saveUninitialized: false,
+    store: sessionStore,  // Usa MySQL para armazenar sessões
     cookie: {
         secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
         httpOnly: true,
@@ -32,14 +45,14 @@ const __dirname = path.dirname(__filename);
 // Rotas HTTP
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 
-// Rota de login (POST)
+// Rota de login (POST) (Sem bcrypt)
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     console.log('Requisição de login:', req.body);
 
     try {
         const user = await getUser(username);
-        if (user && password === user.senha) {
+        if (user && user.senha === password) { // Comparação direta, já que a senha não está criptografada
             req.session.user = { email: user.email };
             console.log('Sessão criada:', req.session.user);
             return res.redirect('/home');
