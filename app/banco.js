@@ -80,11 +80,23 @@ async function getConfigs(){
         console.log(error);
     }
 }
+
+const sessionStore = new MySQLStore({
+    host: process.env.HOST,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    port: process.env.PORTDB,
+    database: process.env.DATABASE,
+    clearExpired: true,     // Limpa sessões expiradas automaticamente
+    checkExpirationInterval: 900000, // Verifica sessões expiradas a cada 15min
+    expiration: 86400000   // Expiração da sessão em 24 horas
+});
 export {
     executeQuery,
     getUser,
     novaConfig,
     updateConfig,
     getConfigs,
-    deleteConfig
+    deleteConfig,
+    sessionStore
 }
