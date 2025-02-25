@@ -2,11 +2,12 @@ import express from 'express';
 import http from 'http';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
+import bcrypt from 'bcrypt'; // Para criptografar a senha
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { getUser, novaConfig, getConfigs, updateConfig, deleteConfig } from './app/banco.js';
+import { getUser, novaConfig, getConfigs, updateConfig, deleteConfig, sessionMiddleware } from './app/banco.js';
 import { proxySSH } from './app/referencia.js';
-
+import dotenv from "dotenv";
 const app = express();
 const server = http.createServer(app);
 
@@ -14,15 +15,7 @@ const server = http.createServer(app);
 app.use(express.json());
 
 // Configuração do armazenamento de sessão no MySQL
-const sessionStore = new MySQLStore({
-    host: 'localhost',      // Altere para o host do seu banco
-    user: 'root',          // Usuário do banco
-    password: 'sua_senha', // Senha do banco
-    database: 'seu_banco', // Nome do banco de dados
-    clearExpired: true,    // Limpa sessões expiradas automaticamente
-    checkExpirationInterval: 900000, // Verifica sessões expiradas a cada 15min
-    expiration: 86400000   // Expiração da sessão em 24 horas
-});
+
 
 // Configuração da sessão
 const sessionMiddleware = session({
@@ -45,14 +38,18 @@ const __dirname = path.dirname(__filename);
 // Rotas HTTP
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 
-// Rota de login (POST) (Sem bcrypt)
+// Rota de login (POST) com bcrypt
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     console.log('Requisição de login:', req.body);
 
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Usuário e senha são obrigatórios' });
+    }
+
     try {
         const user = await getUser(username);
-        if (user && user.senha === password) { // Comparação direta, já que a senha não está criptografada
+        if (user && await bcrypt.compare(password, user.senha)) { // Comparação com bcrypt
             req.session.user = { email: user.email };
             console.log('Sessão criada:', req.session.user);
             return res.redirect('/home');
@@ -70,7 +67,7 @@ app.get('/home', (req, res) => {
     if (req.session.user) {
         res.sendFile(path.join(__dirname, 'views', 'home.html'));
     } else {
-        res.redirect("/");
+        res.redirect("/"); // Redireciona para o login
     }
 });
 
