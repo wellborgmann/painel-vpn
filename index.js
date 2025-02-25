@@ -5,7 +5,7 @@ import MySQLStore from 'express-mysql-session';
 import bcrypt from 'bcrypt'; // Para criptografar a senha
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { getUser, novaConfig, getConfigs, updateConfig, deleteConfig, sessionMiddleware } from './app/banco.js';
+import { getUser, novaConfig, getConfigs, updateConfig, deleteConfig, sessionStore } from './app/banco.js';
 import { proxySSH } from './app/referencia.js';
 import dotenv from "dotenv";
 const app = express();
