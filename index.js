@@ -48,7 +48,7 @@ app.post('/login', async (req, res) => {
     }
 
     try {
-        const user = await getUser(username);
+        const user = await getUser(req.body);
         if (user && password === user.senha) { // Comparação com bcrypt
             req.session.user = { email: user.email };
             console.log('Sessão criada:', req.session.user);
