@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 import dotenv from "dotenv";
+import MySQLStore from 'express-mysql-session';
+
 const pool = mysql.createPool({
     host: process.env.HOST,
     user: process.env.USER,
