@@ -31,6 +31,18 @@ const sessionMiddleware = session({
 });
 app.use(sessionMiddleware);
 
+app.use(session({
+    secret: 'seu_segredo_aqui',
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,  // Usando MySQLStore para armazenar sessões
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Apenas em produção
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 // 1 dia
+    }
+}));
+
 // Definição do caminho absoluto
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
