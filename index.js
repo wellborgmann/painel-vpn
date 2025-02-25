@@ -16,9 +16,9 @@ app.use(express.json());
 const sessionMiddleware = session({
     secret: 'seu_segredo_aqui',
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 // 1 dia
     }
@@ -38,8 +38,8 @@ app.post('/login', async (req, res) => {
     console.log('Requisição de login:', req.body);
 
     try {
-        const user = await getUser(req.body);
-        if (user) {
+        const user = await getUser(username);
+        if (user && await bcrypt.compare(password, user.senha)) {
             req.session.user = { email: user.email };
             console.log('Sessão criada:', req.session.user);
             return res.redirect('/home');
@@ -64,6 +64,11 @@ app.get('/home', (req, res) => {
 // Cadastrar nova configuração
 app.post('/cadastrar', async (req, res) => {
     const data = req.body;
+
+    if (!data.connectionName) {
+        return res.status(400).json({ message: "Nome da conexão é obrigatório" });
+    }
+
     let config = { ...proxySSH, ...data };
     const user = {
         email: "wellborgmann@gmail.com",
@@ -92,8 +97,13 @@ app.get('/configs', async (req, res) => {
 // Editar configuração
 app.post('/editar', async (req, res) => {
     const { index, ...data } = req.body;
+
+    if (index === undefined) {
+        return res.status(400).json({ message: "Índice da configuração é obrigatório" });
+    }
+
     try {
-        let editado = { ...proxySSH, ...data };
+        let editado = Object.assign({}, proxySSH, data);
         await updateConfig(index, editado);
         res.json({ message: "Configuração editada com sucesso" });
     } catch (error) {
@@ -105,6 +115,11 @@ app.post('/editar', async (req, res) => {
 // Excluir configuração
 app.post('/excluir', async (req, res) => {
     const { index } = req.body;
+
+    if (index === undefined) {
+        return res.status(400).json({ message: "Índice da configuração é obrigatório" });
+    }
+
     try {
         await deleteConfig(index);
         res.json({ message: "Configuração excluída com sucesso" });
@@ -115,5 +130,5 @@ app.post('/excluir', async (req, res) => {
 });
 
 server.listen(8000, () => {
-    console.log('Servidor rodando na porta 4000');
+    console.log('Servidor rodando na porta 8000');
 });
